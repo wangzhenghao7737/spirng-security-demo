@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaosa.securityhello.mapper.PermissionMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaosa.securityhello.domain.Permission">
+            <id property="permissionId" column="permission_id" />
+            <result property="permissionName" column="permission_name" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        permission_id,permission_name
+    </sql>
+    <select id="selectPermissionsNameByPermissionIds" resultType="com.xiaosa.securityhello.domain.Permission">
+        SELECT * FROM permission
+        WHERE permission_id IN
+        <foreach collection="permissionIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

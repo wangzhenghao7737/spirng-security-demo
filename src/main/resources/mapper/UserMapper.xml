@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiaosa.securityhello.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiaosa.securityhello.domain.User">
+            <id property="userId" column="user_id" />
+            <result property="phone" column="phone" />
+            <result property="password" column="password" />
+            <result property="username" column="username" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id,phone,password,username
+    </sql>
+    <select id="selectByUserPhone" resultType="com.xiaosa.securityhello.domain.User">
+        select *
+        from user
+        where phone = #{phone}
+    </select>
+</mapper>
