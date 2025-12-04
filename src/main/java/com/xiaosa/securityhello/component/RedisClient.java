@@ -1,10 +1,9 @@
 package com.xiaosa.securityhello.component;
 
 
+import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 /**

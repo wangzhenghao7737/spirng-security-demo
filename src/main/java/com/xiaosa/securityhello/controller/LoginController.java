@@ -5,6 +5,8 @@ import com.xiaosa.securityhello.common.Result;
 import com.xiaosa.securityhello.security.LoginUserDetails;
 import com.xiaosa.utils.JwtUtils;
 import com.xiaosa.securityhello.component.RedisClient;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,8 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +37,7 @@ public class LoginController {
      * @return
      */
     @PostMapping("/login")
-    public Result<Map<String, String>> login(@RequestParam("phone") String phone, @RequestParam("password") String password, HttpServletRequest  request){
+    public Result<Map<String, String>> login(@RequestParam("phone") String phone, @RequestParam("password") String password, HttpServletRequest request){
         //判断曾经登录是否还在有效期
         String token_ = request.getHeader("token");
         //判断token是否存在
