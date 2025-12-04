@@ -7,10 +7,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
-@Configuration
-@EnableMethodSecurity(securedEnabled = true)// 开启方法权限控制
-public class RedisClient {
-    @Bean
+//@Configuration
+//@EnableMethodSecurity(securedEnabled = true)// 开启方法权限控制
+public class RedisConfig {
+//    @Bean
     public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);

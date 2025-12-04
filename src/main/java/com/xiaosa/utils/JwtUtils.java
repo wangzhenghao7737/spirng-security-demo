@@ -1,7 +1,10 @@
 package com.xiaosa.utils;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -10,46 +13,37 @@ import java.util.Map;
 import java.util.Objects;
 
 public class JwtUtils {
-    private static final String SECRET = "7737R-JCGK9-M62FH-9M9C4-RFXHZ:wangzhenghao@graduate.utm.my"; // 至少32字符
-    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
-    private static final long EXPIRATION = 1000 * 60 * 60L;
-    public static String generateToken(String subject, Map<String, Object> claims, long expiration) {
-        if (claims == null) {
-            claims = new HashMap<>();
-        }
-
-        return Jwts.builder()
-                .setClaims(claims)                  // 设置自定义声明
-                .setSubject(subject)                // 设置主题（如 username）
-                .setIssuedAt(new Date())            // 签发时间
-                .setExpiration(new Date(System.currentTimeMillis() +   (Objects.isNull(expiration) ?EXPIRATION:expiration))) // 过期时间
-                .signWith(SECRET_KEY, SignatureAlgorithm.HS256) // 签名算法和密钥
-                .compact();                         // 压缩生成字符串
-    }
-    public static Claims parseToken(String token) throws JwtException {
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
+    private static Algorithm hmac256 = Algorithm.HMAC256("YLWTSMTJFYHDCMGSCWHSSYBZSDKC");
     /**
-     * 安全地解析 Token（捕获常见异常）
+     * 生成token
+     * @param pub  负载
+     * @param expiresTime 过期时间（单位 毫秒）
+     * @return token
      */
-    public static boolean validateToken(String token) {
-        try {
-            parseToken(token);
-            return true;
-        } catch (SecurityException | MalformedJwtException e) {
-            System.err.println("Invalid JWT signature or malformed token");
-        } catch (ExpiredJwtException e) {
-            System.err.println("JWT token is expired");
-        } catch (UnsupportedJwtException e) {
-            System.err.println("JWT token is unsupported");
-        } catch (IllegalArgumentException e) {
-            System.err.println("JWT claims string is empty");
-        }
-        return false;
+    public static String sign(String pub, Long expiresTime){
+        return JWT.create() //生成令牌函数
+                .withIssuer(pub) //自定义负载部分,其实就是添加Claim(jwt结构中的payload部分),可以通过源码查看
+                .withExpiresAt(new Date(System.currentTimeMillis()+expiresTime)) //添加过期时间
+                .sign(hmac256);
     }
+    /**
+     * 校验token
+     */
+    public static boolean verify(String token){
+        JWTVerifier verifier = JWT.require(hmac256).build();
+        //如果正确,直接代码向下执行,如果错误,抛异常
+        verifier.verify(token);
+        return true;
+    }
+    /**
+     * 从token中获取负载
+     * @param token 令牌
+     * @return 保存的负载
+     */
+    public static String getClaim(String token){
+        DecodedJWT jwt = JWT.decode(token);
+        Claim iss = jwt.getClaim("iss");
+        return iss.asString();
+    }
+
 }

@@ -16,11 +16,6 @@ public class LoginUserDetails implements UserDetails {
     private User user;
     private List<String> roleNames;
     private List<String> permissionNames;
-    public LoginUserDetails(User user) {
-        this.user = user;
-    }
-    public LoginUserDetails() {
-    }
 
     public LoginUserDetails(User user, List<String> roleNames, List<String> permissionNames) {
         this.user = user;
@@ -36,19 +31,24 @@ public class LoginUserDetails implements UserDetails {
      */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<GrantedAuthority> authorities = new ArrayList<>();
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        /*
+         * 当前用户的权限信息
+         * 1. 角色表权限   ROLE_  admin  ROLE_admin
+         * 2. 权限表权限  del  add query edit
+         */
         if(!CollectionUtils.isEmpty(roleNames)){
             for (String roleName : roleNames) {
-               roleName = "ROLE_" + roleName;
-               authorities.add(new SimpleGrantedAuthority(roleName));
+                roleName = "ROLE_"+roleName;
+                grantedAuthorities.add(new SimpleGrantedAuthority(roleName));
             }
         }
         if(!CollectionUtils.isEmpty(permissionNames)){
             for (String permissionName : permissionNames) {
-                authorities.add(new SimpleGrantedAuthority(permissionName));
+                grantedAuthorities.add(new SimpleGrantedAuthority(permissionName));
             }
         }
-        return authorities;
+        return grantedAuthorities;
     }
 
     @Override

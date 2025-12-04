@@ -1,5 +1,6 @@
 package com.xiaosa.securityhello.security;
 
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.common.Result;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,15 +15,17 @@ import java.io.IOException;
 
 @Component
 public class LoginUnAccessDeniedHandler implements AccessDeniedHandler {
-    @Resource
-    private ObjectMapper objectMapper;
     /**
      *已经登录，但是没有权限
      */
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-        response.setContentType("application/json;charset=utf-8");
-        String s = objectMapper.writeValueAsString(Result.error("无权限"));
-        response.getWriter().write(s);
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("application/json");
+        Result result = Result.error("权限不足,请重新授权。");
+        //将消息json化
+        String json = JSONUtil.toJsonStr(result);
+        //送到客户端
+        response.getWriter().print(json);
     }
 }

@@ -1,8 +1,7 @@
 package com.xiaosa.securityhello.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xiaosa.utils.KeyUtils;
-import org.springframework.data.redis.core.RedisTemplate;
+import cn.hutool.json.JSONUtil;
+import com.xiaosa.securityhello.component.RedisClient;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,25 +21,27 @@ import java.util.Objects;
  */
 @Component
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
+
     @Resource
-    private RedisTemplate<String, String> redisTemplate;
-    @Resource
-    private ObjectMapper objectMapper;
+    private RedisClient redisClient;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        //获取token
         String token = request.getHeader("token");
-        if(StringUtils.hasText( token)){
-            String json = redisTemplate.opsForValue().get(KeyUtils.getLoginKey(token));
+        if(StringUtils.hasText(token)){
+            String key="login:token:"+token;
+            String json = redisClient.get(key);
             if(StringUtils.hasText(json)){
-                LoginUserDetails userDetails = objectMapper.readValue(json, LoginUserDetails.class);
+                LoginUserDetails userDetails = JSONUtil.toBean(json, LoginUserDetails.class);
                 if(Objects.nonNull(userDetails)){
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }else{
+                }else {
                     SecurityContextHolder.getContext().setAuthentication(null);
                 }
             }
         }
+        //放行,后面交给Spring Security 框架
         filterChain.doFilter(request,response);
     }
 }

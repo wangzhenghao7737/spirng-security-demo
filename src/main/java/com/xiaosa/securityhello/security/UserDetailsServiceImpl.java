@@ -39,8 +39,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if(Objects.isNull( user)){
             throw new UsernameNotFoundException("用户不存在");
         }
-        ArrayList<String> roleNameList = new ArrayList<>();
-        ArrayList<String> permissionNameList = new ArrayList<>();
+        List<String> roleNameList = new ArrayList<>();
+        List<String> permissionNameList = new ArrayList<>();
         //用户角色列表
         List<UserRole> userRoles = userRoleMapper.selectByUserId(user.getUserId());
         if(!CollectionUtils.isEmpty(userRoles)){

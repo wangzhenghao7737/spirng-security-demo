@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -14,6 +15,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import javax.annotation.Resource;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
     @Resource
     private LoginUnAuthenticationEntryPointHandler loginUnAuthenticationEntryPointHandler;
@@ -25,22 +27,23 @@ public class SecurityConfig {
     private LoginUnAccessDeniedHandler loginUnAccessDeniedHandler;
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        http.csrf().disable() //防止跨站请求伪造
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) //取消session
                 .and()
                 .authorizeRequests()
-                .antMatchers("/login","/test1").permitAll()
-                .anyRequest().authenticated();
-        //注册自定义过滤链
+                .antMatchers("/login","/test1").permitAll() //登陆和未登录的人都可以访问访问
+                .anyRequest().authenticated();//除了上面设置的地址可以匿名访问,其它所有的请求地址需要认证访问
+
+        //将自定义的过滤器注册到SpringSecurity过滤器链中,并且设置到UsernamePasswordAuthenticationFilter前面
         http.addFilterBefore(jwtAuthenticationTokenFilter, UsernamePasswordAuthenticationFilter.class);
         //注册匿名访问私有资源的处理器
         http.exceptionHandling().authenticationEntryPoint(loginUnAuthenticationEntryPointHandler);
-        //注册权限不够的处理器
+        //权限不够交给哪个处理器处理
         http.exceptionHandling().accessDeniedHandler(loginUnAccessDeniedHandler);
-        //注销
+        //注册自定义注销成功的处理器
         http.logout().logoutSuccessHandler(logoutStatusSuccessHandler);
-        return http.build();
 
+        return http.build();
     }
     @Bean
     public PasswordEncoder encoder(){

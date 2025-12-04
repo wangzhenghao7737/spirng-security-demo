@@ -1,11 +1,8 @@
 package com.xiaosa.securityhello.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.hutool.json.JSONUtil;
 import com.xiaosa.securityhello.common.Result;
-import com.xiaosa.securityhello.component.RedisManager;
-import com.xiaosa.utils.JwtUtils;
-import com.xiaosa.utils.KeyUtils;
-import io.jsonwebtoken.Claims;
+import com.xiaosa.securityhello.component.RedisClient;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -20,18 +17,21 @@ import java.io.IOException;
 @Component
 public class LogoutStatusSuccessHandler implements LogoutSuccessHandler {
     @Resource
-    private RedisManager redisManager;
-    @Resource
-    private ObjectMapper objectMapper;
+    private RedisClient redisClient;
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        String token_ = request.getHeader("token");
-        if(StringUtils.hasText(token_)){
-            redisManager.delete(KeyUtils.getLoginKey(token_));
+        String token = request.getHeader("token");
+        //判断token是否存在
+        if(StringUtils.hasText(token)){
+            //从redis中删除
+            String key="login:token:"+token;
+            redisClient.del(key);
         }
-        response.setContentType("application/json;charset=utf-8");
-        Result<Object> error = Result.ok("退出成功");
-        String s = objectMapper.writeValueAsString(error);
-        response.getWriter().write(s);
+        //返回给客户端注销成功的提示
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("application/json");
+        Result result = Result.ok("注销成功");
+        String json = JSONUtil.toJsonStr(result);
+        response.getWriter().print(json);
     }
 }

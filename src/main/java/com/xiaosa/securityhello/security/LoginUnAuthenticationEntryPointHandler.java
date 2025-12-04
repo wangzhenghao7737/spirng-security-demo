@@ -1,5 +1,6 @@
 package com.xiaosa.securityhello.security;
 
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.common.Result;
 import org.springframework.security.core.AuthenticationException;
@@ -17,13 +18,12 @@ import java.io.IOException;
  */
 @Component
 public class LoginUnAuthenticationEntryPointHandler implements AuthenticationEntryPoint {
-    @Resource
-    private ObjectMapper objectMapper;
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        response.setContentType("application/json;charset=utf-8");
-        Result<Object> error = Result.error("用户未登录或过期");
-        String s = objectMapper.writeValueAsString(error);
-        response.getWriter().write(s);
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("application/json");
+        Result error = Result.error("用户未登录或登录已过期,请重新登录");
+        String json = JSONUtil.toJsonStr(error);
+        response.getWriter().print(json);
     }
 }

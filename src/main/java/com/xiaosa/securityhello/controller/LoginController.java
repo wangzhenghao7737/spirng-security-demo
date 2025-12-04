@@ -1,12 +1,10 @@
 package com.xiaosa.securityhello.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cn.hutool.json.JSONUtil;
 import com.xiaosa.securityhello.common.Result;
-import com.xiaosa.securityhello.component.RedisManager;
 import com.xiaosa.securityhello.security.LoginUserDetails;
 import com.xiaosa.utils.JwtUtils;
-import com.xiaosa.utils.KeyUtils;
-import io.jsonwebtoken.Claims;
+import com.xiaosa.securityhello.component.RedisClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,9 +27,7 @@ public class LoginController {
     @Resource
     private AuthenticationManager authenticationManager;
     @Resource
-    private RedisManager redisManager;
-    @Resource
-    private ObjectMapper objectMapper;
+    private RedisClient redisClient;
     /**
      * 登录
      * @param phone,password
@@ -39,39 +35,48 @@ public class LoginController {
      */
     @PostMapping("/login")
     public Result<Map<String, String>> login(@RequestParam("phone") String phone, @RequestParam("password") String password, HttpServletRequest  request){
-        //避免多次登录重复token
+        //判断曾经登录是否还在有效期
         String token_ = request.getHeader("token");
-        log.info(" last token:{}",token_);
+        //判断token是否存在
         if(StringUtils.hasText(token_)){
-            Claims claims = JwtUtils.parseToken(token_);
-            String phone_ = claims.get("phone", String.class);
-            if(StringUtils.hasText(phone_)&&phone_.equals(phone)){
-                redisManager.delete(KeyUtils.getLoginKey(token_));
+            String claim = JwtUtils.getClaim(token_);
+            if(StringUtils.hasText(claim) && claim.equals(phone)){
+                //从redis中删除
+                String key="login:token:"+token_;
+                redisClient.del(key);
             }
         }
+
+
         //封装用户名和密码
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(phone, password);
-        try{
-            //调用认证方法
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(phone,password);
+
+        /*
+         * 调用认证方法
+         * Authentication: 如果成功,封装了用户的全部信息，认证/授权
+         */
+        try {
             Authentication authenticate = authenticationManager.authenticate(authenticationToken);
             if(Objects.isNull(authenticate)){
-                return Result.error("登录失败");
+                return Result.error("用户名或密码错误");
             }
-            //用户信息json化
-            LoginUserDetails principal = (LoginUserDetails)authenticate.getPrincipal();
-            String subject = principal.getUser().getUserId().toString();
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("phone",phone);
-            String token = JwtUtils.generateToken(subject,map,1000*60*60L);
-            log.info("new token {}",token);
-            String json = objectMapper.writeValueAsString(principal);
-            redisManager.set(KeyUtils.getLoginKey(token),json,1000*60*60L);
-            HashMap<String, String> result_map = new HashMap<>();
-            result_map.put("token",token);
-            return Result.ok(200,"登录成功",result_map);
-        } catch (Exception e) {
+
+            //生成token
+            String token = JwtUtils.sign(phone, 1000 * 60 * 60 * 24 * 7L);
+            //将生成的token保存到redis中
+            String key="login:token:"+token;
+            //将用户信息json化
+            LoginUserDetails principal = (LoginUserDetails) authenticate.getPrincipal();
+            String json = JSONUtil.toJsonStr(principal);
+            //保存到redis中
+            redisClient.set(key,json,1000 * 60 * 60 * 24 * 7L);
+            //将token返回给客户端
+            Map<String,Object> map = new HashMap<>();
+            map.put("token",token);
+            return Result.ok(map);
+        }catch (Exception e){
             e.printStackTrace();
-            return Result.error("登录失败(Exception)");
+            return Result.error("用户名或密码错误");
         }
     }
 }
