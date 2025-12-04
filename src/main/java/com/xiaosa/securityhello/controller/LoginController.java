@@ -1,7 +1,10 @@
 package com.xiaosa.securityhello.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xiaosa.securityhello.common.LoginConstant;
 import com.xiaosa.securityhello.common.Result;
+import com.xiaosa.securityhello.domain.User;
 import com.xiaosa.securityhello.security.LoginUserDetails;
 import com.xiaosa.securityhello.component.RedisClient;
 import com.xiaosa.utils.JwtUtilsV2;
@@ -15,8 +18,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -31,52 +32,60 @@ public class LoginController {
     private RedisClient redisClient;
     @Resource
     private ObjectMapper objectMapper;
-    /**
-     * 登录
-     * @param phone,password
-     * @return
-     */
     @PostMapping("/login")
-    public Result<Map<String, String>> login(@RequestParam("phone") String phone, @RequestParam("password") String password, HttpServletRequest request){
-        //判断曾经登录是否还在有效期
-        String token_ = request.getHeader("token");
-        //判断token是否存在
-        if(StringUtils.hasText(token_)){
-            String claim = JwtUtilsV2.getSubject(token_);
-            if(StringUtils.hasText(claim) && claim.equals(phone)){
-                //从redis中删除
-                String key="login:token:"+phone;
-                redisClient.del(key);
-            }
-        }
-        //封装用户名和密码
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(phone,password);
-        /*
-         * 调用认证方法
-         * Authentication: 如果成功,封装了用户的全部信息，认证/授权
-         */
+    public Result<Map<String, String>> loginPhone(@RequestParam("phone") String phone, @RequestParam("password") String password, HttpServletRequest request){
+        return loginLogic(phone,password,request);
+    }
+    @PostMapping("/loginId")
+    public Result<Map<String, String>> loginId(@RequestParam("userId") Long userId, @RequestParam("password") String password, HttpServletRequest request){
+        return loginLogic(String.valueOf(userId),password,request);
+    }
+    public Result<Map<String, String>> loginLogic(String id,String pwd,HttpServletRequest request) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(id, pwd);
         try {
             Authentication authenticate = authenticationManager.authenticate(authenticationToken);
-            if(Objects.isNull(authenticate)){
+            if (Objects.isNull(authenticate)) {
                 return Result.error("用户名或密码错误");
             }
-            //将用户信息json化
             LoginUserDetails principal = (LoginUserDetails) authenticate.getPrincipal();
+            User user = principal.getUser();
+            // 有则删缓存
+            redisClient.del(JwtUtilsV2.getLoginTokenKey(user.getUserId()));
             String json = objectMapper.writeValueAsString(principal);
             //生成token
-            String token = JwtUtilsV2.sign(phone, 1000 * 60 * 60 * 24 * 7L);
+            String token = JwtUtilsV2.sign(String.valueOf(user.getUserId()),  LoginConstant.TOKEN_EXPIRE_MILLIS);
             //将生成的token保存到redis中
-            String key="login:token:"+phone;
-//            String key="login:token:"+principal.getUser().getUserId().toString();
-            //保存到redis中
-            redisClient.set(key,json,1000 * 60 * 60 * 24 * 7L);
+            redisClient.set(JwtUtilsV2.getLoginTokenKey(user.getUserId()), json, LoginConstant.TOKEN_EXPIRE_MILLIS);
             //将token返回给客户端
-            Map<String,Object> map = new HashMap<>();
-            map.put("token",token);
+            Map<String, String> map = new HashMap<>();
+            map.put("token", token);
             return Result.ok(map);
-        }catch (Exception e){
-            e.printStackTrace();
+        } catch (JsonProcessingException e) {
+            return Result.error("登录失败LoginController");
+        } catch (Exception e){
             return Result.error("用户名或密码错误");
         }
+    }
+    @PostMapping("/refreshLogin")
+    public Result<Map<String, String>> refreshLogin(HttpServletRequest request) {
+        //判断曾经登录是否还在有效期
+        String token = request.getHeader("token");
+        if (!StringUtils.hasText(token)) {
+            return Result.error("缺失登录凭证");
+        }
+        if (!JwtUtilsV2.verify(token)) {
+            return Result.error("登录已过期jwt");
+        }
+        String userId = JwtUtilsV2.getSubject(token);
+        String s = redisClient.get(JwtUtilsV2.getLoginTokenKey(userId));
+        if (!StringUtils.hasText(s)) {
+            return Result.error("登录已过期redis");
+        }
+        redisClient.expire(JwtUtilsV2.getLoginTokenKey(userId),  LoginConstant.TOKEN_EXPIRE_MILLIS);
+        //LoginUserDetails principal = objectMapper.readValue(s, LoginUserDetails.class);
+        String new_token = JwtUtilsV2.sign(userId,  LoginConstant.TOKEN_EXPIRE_MILLIS);
+        Map<String, String> map = new HashMap<>();
+        map.put("token", new_token);
+        return Result.ok(map);
     }
 }

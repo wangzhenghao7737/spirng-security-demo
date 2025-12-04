@@ -61,10 +61,15 @@ public class LoginUserDetails implements UserDetails {
         return user.getPassword();
     }
 
+    /**
+     * 根据登录时传入的数据：Long , phone
+     * 在UserDetailsServiceImpl中查询用户信息
+     * 最终user_id为凭据
+     */
     @Override
     @JsonIgnore
     public String getUsername() {
-        return user.getPhone();
+        return user.getUserId().toString();
     }
 
     @Override

@@ -32,10 +32,24 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private RolePermissionMapper rolePermissionMapper;
     @Resource
     private PermissionMapper permissionMapper;
+    /**
+     * @param username
+     * Long id , start at 20000000000
+     * phone String
+     * 20000000000
+     * 13812341234
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userMapper.selectByUserPhone(username);
-        if(Objects.isNull( user)){
+        User user = null;
+        if(isValidPhone(username)){
+            user = userMapper.selectByUserPhone(username);
+        }else if(isNumeric(username)){
+            user = userMapper.selectByUserId(Long.parseLong(username));
+        }else{
+            user = userMapper.selectByUserId(Long.parseLong(username));
+        }
+        if(Objects.isNull(user)){
             throw new UsernameNotFoundException("用户不存在");
         }
         List<String> roleNameList = new ArrayList<>();
@@ -74,5 +88,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             }
         }
         return new LoginUserDetails(user, roleNameList, permissionNameList);
+    }
+
+    private boolean isNumeric(String str) {
+        return str != null && str.matches("\\d+");
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone != null && phone.matches("1[3-9]\\d{9}");
     }
 }

@@ -81,4 +81,11 @@ public class JwtUtilsV2 {
             throw new RuntimeException("Failed to parse JWT token", e);
         }
     }
+
+    public static String getLoginTokenKey(Long userId){
+        return getLoginTokenKey(userId.toString());
+    }
+    public static String getLoginTokenKey(String userId){
+        return "login:token:" + userId;
+    }
 }

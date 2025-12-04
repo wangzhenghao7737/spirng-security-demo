@@ -24,14 +24,15 @@ public class LogoutStatusSuccessHandler implements LogoutSuccessHandler {
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException{
         String token = request.getHeader("token");
         //判断token是否存在,并从redis中删除
-        if(StringUtils.hasText(token)){
-            String key="login:token:"+ JwtUtilsV2.getSubject(token);
-            redisClient.del(key);
+        Result result =null;
+        if (!StringUtils.hasText(token)){
+         result = Result.ok("注销失败，无jwt");
         }
+        redisClient.del(JwtUtilsV2.getLoginTokenKey(JwtUtilsV2.getSubject( token)));
         //返回给客户端注销成功的提示
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json");
-        Result result = Result.ok("注销成功");
+        result = Result.ok("注销成功logout");
         String json = objectMapper.writeValueAsString(result);
         response.getWriter().print(json);
     }
