@@ -23,9 +23,7 @@ public class LoginUnAuthenticationEntryPointHandler implements AuthenticationEnt
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json");
         Result error = Result.error("用户未登录或登录已过期,请重新登录");
-//        String json = JSONUtil.toJsonStr(error);
         String json = objectMapper.writeValueAsString(error);
         response.getWriter().print(json);
-
     }
 }

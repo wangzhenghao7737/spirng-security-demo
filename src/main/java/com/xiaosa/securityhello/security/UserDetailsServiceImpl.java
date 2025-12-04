@@ -52,7 +52,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 if(!CollectionUtils.isEmpty(roles)){
                     List<String> roleNames = roles.stream()
                             .map(Role::getRoleName)
-                            .collect(Collectors.toList());
+                            .toList();
                     roleNameList.addAll(roleNames);
                 }
                 //权限列表
@@ -66,7 +66,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                         if(!CollectionUtils.isEmpty(permissions)){
                             List<String> permissionNames = permissions.stream()
                                     .map(Permission::getPermissionName)
-                                    .collect(Collectors.toList());
+                                    .toList();
                             permissionNameList.addAll(permissionNames);
                         }
                     }

@@ -25,7 +25,6 @@ public class LoginUnAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         Result result = Result.error("权限不足,请重新授权。");
         //将消息json化
-//        String json = JSONUtil.toJsonStr(result);
         String json = objectMapper.writeValueAsString(result);
         //送到客户端
         response.getWriter().print(json);

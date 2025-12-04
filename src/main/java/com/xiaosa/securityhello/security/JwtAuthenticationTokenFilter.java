@@ -2,7 +2,7 @@ package com.xiaosa.securityhello.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.component.RedisClient;
-import com.xiaosa.utils.JwtUtils;
+import com.xiaosa.utils.JwtUtilsV2;
 import jakarta.annotation.Resource;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -33,10 +33,9 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         //获取token
         String token = request.getHeader("token");
         if(StringUtils.hasText(token)){
-            String key="login:token:"+JwtUtils.getClaim(token);
+            String key="login:token:"+ JwtUtilsV2.getSubject(token);
             String json = redisClient.get(key);
             if(StringUtils.hasText(json)){
-//                LoginUserDetails userDetails = JSONUtil.toBean(json, LoginUserDetails.class);
                 LoginUserDetails userDetails = objectMapper.readValue(json, LoginUserDetails.class);
                 if(Objects.nonNull(userDetails)){
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

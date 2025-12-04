@@ -3,8 +3,8 @@ package com.xiaosa.securityhello.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.common.Result;
 import com.xiaosa.securityhello.security.LoginUserDetails;
-import com.xiaosa.utils.JwtUtils;
 import com.xiaosa.securityhello.component.RedisClient;
+import com.xiaosa.utils.JwtUtilsV2;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -42,18 +42,15 @@ public class LoginController {
         String token_ = request.getHeader("token");
         //判断token是否存在
         if(StringUtils.hasText(token_)){
-            String claim = JwtUtils.getClaim(token_);
+            String claim = JwtUtilsV2.getSubject(token_);
             if(StringUtils.hasText(claim) && claim.equals(phone)){
                 //从redis中删除
                 String key="login:token:"+phone;
                 redisClient.del(key);
             }
         }
-
-
         //封装用户名和密码
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(phone,password);
-
         /*
          * 调用认证方法
          * Authentication: 如果成功,封装了用户的全部信息，认证/授权
@@ -63,15 +60,14 @@ public class LoginController {
             if(Objects.isNull(authenticate)){
                 return Result.error("用户名或密码错误");
             }
-
-            //生成token
-            String token = JwtUtils.sign(phone, 1000 * 60 * 60 * 24 * 7L);
-            //将生成的token保存到redis中
-            String key="login:token:"+phone;
             //将用户信息json化
             LoginUserDetails principal = (LoginUserDetails) authenticate.getPrincipal();
-//            String json = JSONUtil.toJsonStr(principal);
             String json = objectMapper.writeValueAsString(principal);
+            //生成token
+            String token = JwtUtilsV2.sign(phone, 1000 * 60 * 60 * 24 * 7L);
+            //将生成的token保存到redis中
+            String key="login:token:"+phone;
+//            String key="login:token:"+principal.getUser().getUserId().toString();
             //保存到redis中
             redisClient.set(key,json,1000 * 60 * 60 * 24 * 7L);
             //将token返回给客户端

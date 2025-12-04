@@ -3,7 +3,7 @@ package com.xiaosa.securityhello.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.common.Result;
 import com.xiaosa.securityhello.component.RedisClient;
-import com.xiaosa.utils.JwtUtils;
+import com.xiaosa.utils.JwtUtilsV2;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,19 +23,16 @@ public class LogoutStatusSuccessHandler implements LogoutSuccessHandler {
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException{
         String token = request.getHeader("token");
-        //判断token是否存在
+        //判断token是否存在,并从redis中删除
         if(StringUtils.hasText(token)){
-            //从redis中删除
-            String key="login:token:"+ JwtUtils.getClaim(token);
+            String key="login:token:"+ JwtUtilsV2.getSubject(token);
             redisClient.del(key);
         }
         //返回给客户端注销成功的提示
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json");
         Result result = Result.ok("注销成功");
-//        String json = JSONUtil.toJsonStr(result);
         String json = objectMapper.writeValueAsString(result);
         response.getWriter().print(json);
-
     }
 }
