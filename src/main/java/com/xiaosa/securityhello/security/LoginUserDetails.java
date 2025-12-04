@@ -1,5 +1,6 @@
 package com.xiaosa.securityhello.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.xiaosa.securityhello.domain.User;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,6 +17,8 @@ public class LoginUserDetails implements UserDetails {
     private User user;
     private List<String> roleNames;
     private List<String> permissionNames;
+    public LoginUserDetails() {
+    }
 
     public LoginUserDetails(User user, List<String> roleNames, List<String> permissionNames) {
         this.user = user;
@@ -30,6 +33,7 @@ public class LoginUserDetails implements UserDetails {
      * 2.权限
      */
     @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         /*
@@ -52,31 +56,37 @@ public class LoginUserDetails implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public String getPassword() {
         return user.getPassword();
     }
 
     @Override
+    @JsonIgnore
     public String getUsername() {
         return user.getPhone();
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isAccountNonLocked() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isCredentialsNonExpired() {
         return true;
     }
 
     @Override
+    @JsonIgnore
     public boolean isEnabled() {
         return true;
     }

@@ -1,6 +1,6 @@
 package com.xiaosa.securityhello.controller;
 
-import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.common.Result;
 import com.xiaosa.securityhello.security.LoginUserDetails;
 import com.xiaosa.utils.JwtUtils;
@@ -28,6 +28,8 @@ public class LoginController {
     private AuthenticationManager authenticationManager;
     @Resource
     private RedisClient redisClient;
+    @Resource
+    private ObjectMapper objectMapper;
     /**
      * 登录
      * @param phone,password
@@ -42,7 +44,7 @@ public class LoginController {
             String claim = JwtUtils.getClaim(token_);
             if(StringUtils.hasText(claim) && claim.equals(phone)){
                 //从redis中删除
-                String key="login:token:"+token_;
+                String key="login:token:"+phone;
                 redisClient.del(key);
             }
         }
@@ -64,10 +66,11 @@ public class LoginController {
             //生成token
             String token = JwtUtils.sign(phone, 1000 * 60 * 60 * 24 * 7L);
             //将生成的token保存到redis中
-            String key="login:token:"+token;
+            String key="login:token:"+phone;
             //将用户信息json化
             LoginUserDetails principal = (LoginUserDetails) authenticate.getPrincipal();
-            String json = JSONUtil.toJsonStr(principal);
+//            String json = JSONUtil.toJsonStr(principal);
+            String json = objectMapper.writeValueAsString(principal);
             //保存到redis中
             redisClient.set(key,json,1000 * 60 * 60 * 24 * 7L);
             //将token返回给客户端

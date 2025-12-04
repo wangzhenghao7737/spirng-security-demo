@@ -1,7 +1,8 @@
 package com.xiaosa.securityhello.security;
 
-import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaosa.securityhello.component.RedisClient;
+import com.xiaosa.utils.JwtUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,8 @@ import java.util.Objects;
  */
 @Component
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
+    @Resource
+    private ObjectMapper objectMapper;
 
     @Resource
     private RedisClient redisClient;
@@ -29,10 +32,11 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         //获取token
         String token = request.getHeader("token");
         if(StringUtils.hasText(token)){
-            String key="login:token:"+token;
+            String key="login:token:"+JwtUtils.getClaim(token);
             String json = redisClient.get(key);
             if(StringUtils.hasText(json)){
-                LoginUserDetails userDetails = JSONUtil.toBean(json, LoginUserDetails.class);
+//                LoginUserDetails userDetails = JSONUtil.toBean(json, LoginUserDetails.class);
+                LoginUserDetails userDetails = objectMapper.readValue(json, LoginUserDetails.class);
                 if(Objects.nonNull(userDetails)){
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
