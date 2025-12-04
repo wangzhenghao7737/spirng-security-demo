@@ -87,7 +87,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 }
             }
         }
-        return new LoginUserDetails(user, roleNameList, permissionNameList);
+        return new LoginUserDetails(user, roleNameList, permissionNameList, username);
     }
 
     private boolean isNumeric(String str) {

@@ -17,13 +17,15 @@ public class LoginUserDetails implements UserDetails {
     private User user;
     private List<String> roleNames;
     private List<String> permissionNames;
+    private String loginIdentifier;
     public LoginUserDetails() {
     }
 
-    public LoginUserDetails(User user, List<String> roleNames, List<String> permissionNames) {
+    public LoginUserDetails(User user, List<String> roleNames, List<String> permissionNames, String loginIdentifier) {
         this.user = user;
         this.roleNames = roleNames;
         this.permissionNames = permissionNames;
+        this.loginIdentifier = loginIdentifier;
     }
 
     /**
@@ -69,7 +71,7 @@ public class LoginUserDetails implements UserDetails {
     @Override
     @JsonIgnore
     public String getUsername() {
-        return user.getUserId().toString();
+        return loginIdentifier; // 返回用户实际输入的内容
     }
 
     @Override
