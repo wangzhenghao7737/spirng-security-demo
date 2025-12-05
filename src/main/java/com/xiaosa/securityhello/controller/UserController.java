@@ -1,12 +1,26 @@
 package com.xiaosa.securityhello.controller;
 
 import com.xiaosa.securityhello.common.Result;
+import com.xiaosa.securityhello.domain.User;
+import com.xiaosa.securityhello.service.UserService;
+import jakarta.annotation.Resource;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class UserController {
+    @Resource
+    private UserService userService;
+    @Resource
+    private PasswordEncoder passwordEncoder;
+
+    @PutMapping("/create")
+    public Result<String> createUser(@RequestBody User user){
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        int i = userService.createUser( user);
+        return Result.ok("创建用户成功"+i);
+    }
     //匿名访问
     @GetMapping("/test1")
     public Result<String>  getTest(){

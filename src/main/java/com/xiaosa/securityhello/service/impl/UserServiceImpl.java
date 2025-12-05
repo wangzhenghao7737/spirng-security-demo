@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.xiaosa.securityhello.domain.User;
 import com.xiaosa.securityhello.service.UserService;
 import com.xiaosa.securityhello.mapper.UserMapper;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,7 +15,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService {
+    @Resource
+    private UserMapper userMapper;
 
+    @Override
+    public int createUser(User user) {
+        return userMapper.insert(user);
+    }
 }
 
 
