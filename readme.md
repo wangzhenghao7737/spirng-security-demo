@@ -13,3 +13,14 @@ token(jwt)解析失败直接抛出异常
 键为  login:token:user_id
 值为（String）  LoginUserDetails(JSON)
 旧的token依旧可以解析出user_id
+## 配置
+### application-dev.yml
+datasource:
+driver-class-name: com.mysql.cj.jdbc.Driver
+url: your
+username: root
+password: your
+data:
+redis:
+host: your
+port: 6379
