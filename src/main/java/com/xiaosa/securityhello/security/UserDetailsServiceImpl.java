@@ -41,53 +41,58 @@ public class UserDetailsServiceImpl implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = null;
-        if(isValidPhone(username)){
-            user = userMapper.selectByUserPhone(username);
-        }else if(isNumeric(username)){
-            user = userMapper.selectByUserId(Long.parseLong(username));
-        }else{
-            user = userMapper.selectByUserId(Long.parseLong(username));
+        if (isValidPhone(username)) {
+            return loadUserByPhone(username);
+        } else if (isNumeric(username)) {
+            User user = userMapper.selectByUserId(Long.parseLong(username));
+            if (user == null) throw new UsernameNotFoundException("用户不存在");
+            return buildLoginUserDetails(user, username);
+        } else {
+            // 可扩展：邮箱等
+            throw new UsernameNotFoundException("不支持的用户名格式");
         }
-        if(Objects.isNull(user)){
-            throw new UsernameNotFoundException("用户不存在");
+    }
+
+
+
+    private UserDetails loadUserByPhone(String phone) {
+        User user = userMapper.selectByUserPhone(phone);
+        if (user == null) {
+            throw new UsernameNotFoundException("手机号未注册");
         }
+        // 复用你原有的角色/权限加载逻辑
+        return buildLoginUserDetails(user, phone);
+    }
+    // 新增私有方法，提取公共逻辑
+    private LoginUserDetails buildLoginUserDetails(User user, String loginIdentifier) {
         List<String> roleNameList = new ArrayList<>();
         List<String> permissionNameList = new ArrayList<>();
-        //用户角色列表
+
         List<UserRole> userRoles = userRoleMapper.selectByUserId(user.getUserId());
-        if(!CollectionUtils.isEmpty(userRoles)){
+        if (!CollectionUtils.isEmpty(userRoles)) {
             List<Long> roleIdList = userRoles.stream()
                     .map(UserRole::getRoleId)
                     .collect(Collectors.toList());
-            if(!CollectionUtils.isEmpty(roleIdList)){
-                //角色列表
+            if (!CollectionUtils.isEmpty(roleIdList)) {
                 List<Role> roles = roleMapper.selectRoleNameByRoleIds(roleIdList);
-                if(!CollectionUtils.isEmpty(roles)){
-                    List<String> roleNames = roles.stream()
-                            .map(Role::getRoleName)
-                            .toList();
-                    roleNameList.addAll(roleNames);
+                if (!CollectionUtils.isEmpty(roles)) {
+                    roleNameList.addAll(roles.stream().map(Role::getRoleName).toList());
                 }
-                //权限列表
                 List<RolePermission> rolePermissions = rolePermissionMapper.selectPermissionsIdByRoleIds(roleIdList);
-                if(!CollectionUtils.isEmpty(rolePermissions)){
+                if (!CollectionUtils.isEmpty(rolePermissions)) {
                     List<Long> permissionsIdList = rolePermissions.stream()
                             .map(RolePermission::getPermissionId)
                             .collect(Collectors.toList());
-                    if(!CollectionUtils.isEmpty(permissionsIdList)){
+                    if (!CollectionUtils.isEmpty(permissionsIdList)) {
                         List<Permission> permissions = permissionMapper.selectPermissionsNameByPermissionIds(permissionsIdList);
-                        if(!CollectionUtils.isEmpty(permissions)){
-                            List<String> permissionNames = permissions.stream()
-                                    .map(Permission::getPermissionName)
-                                    .toList();
-                            permissionNameList.addAll(permissionNames);
+                        if (!CollectionUtils.isEmpty(permissions)) {
+                            permissionNameList.addAll(permissions.stream().map(Permission::getPermissionName).toList());
                         }
                     }
                 }
             }
         }
-        return new LoginUserDetails(user, roleNameList, permissionNameList, username);
+        return new LoginUserDetails(user, roleNameList, permissionNameList, loginIdentifier);
     }
 
     private boolean isNumeric(String str) {
